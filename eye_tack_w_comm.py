@@ -109,8 +109,8 @@ def main():
             
             inas+=1
             cv2.imshow('showing', face_frame)
-            if len(eye_coords) > 0:
-                send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames,ms)
+            #if len(eye_coords) > 0:
+            #    send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames,ms)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     cap.release()
