@@ -1,7 +1,7 @@
 import cv2
 import socket
 import numpy as np
-import pyautogui
+#import pyautogui
 
 
 def show_img(img, name='my image'):

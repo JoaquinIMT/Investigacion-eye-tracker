@@ -2,10 +2,15 @@ import cv2
 import socket
 from matplotlib import pyplot as plt
 from static_functions import *
+from tkinter import *
+from tkinter import filedialog
+from PIL import Image
+from PIL import ImageTk
+import imutils
+import numpy as np
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-
 
 class Variable:
     def _init_(self):
@@ -13,16 +18,7 @@ class Variable:
 
 
 def main():
-   
-    ms = socket.socket()
-    ms.bind(('localhost',5000))
-    ms.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-    ms.listen(5)
-    blob_detector_params = cv2.SimpleBlobDetector_Params()
-    blob_detector_params.filterByArea = True
-    blob_detector_params.maxArea = 150
-    blob_detector = cv2.SimpleBlobDetector_create(blob_detector_params)
-    cap = cv2.VideoCapture(0)
+
     # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 250)
     # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 150)
     
@@ -30,6 +26,7 @@ def main():
     inas=0
     while True:
         _, frame = cap.read()
+        #frame =imutils.resize(frame,width=300)
         face_frame, face_coords = detect_faces(frame, face_cascade)
         if face_frame is not None:
             eyes = detect_eyes(face_frame, eye_cascade)
@@ -52,8 +49,13 @@ def main():
                         eyes_frames.append(eye)
                         eye_coords.append(kp_coordinate)
             inas+=1
-            cv2.imshow('showing_FACE', face_frame) #Cara con los ojos ya marcados
-            cv2.imshow('showing_FACE', frame) #Toda la imagen
+            im=Image.fromarray(frame)
+            img =ImageTk.PhotoImage(image=im)
+            lblOutputImage.configure(image=img)
+            
+            #lblOutputImage.after(10,)
+            #cv2.imshow('showing_FACE', face_frame) #Cara con los ojos ya marcados
+            #cv2.imshow('showing_FACE', frame) #Toda la imagen
             #if len(eye_coords) > 0:
             #Descomentar para usar con processing
             #    send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames,ms)
@@ -160,7 +162,65 @@ def send_data(frame, face, face_coords, eye_coords,eyes,ms):
         #print(max_x.value,min_X.value,max_y.value,min_y.value)
         print(xn.value,yn.value)
         connection.close()
-    
+
+
+########Funciones GUI
+def elegir_img():
+    path = filedialog.askopenfilename(
+        initialdir='/images',
+        title='Selecciona una imagen',
+        filetypes=(
+        ('png files','*.png'), # any extension
+       # ('all files','*.*')  #any name, any extension
+        ('jpg files','*.jpg'),
+        ('jpeg files','*.jpeg')
+        )
+    )
+    if len(path) >0:
+        global image
+
+        #### leer la imagen
+        image =cv2.imread(path)
+        image = imutils.resize(image,height=100)
+
+        #### visualizar la imagen de entrada en la GUI
+        image_show = imutils.resize(image,width=200)
+        image_show = cv2.cvtColor(image_show,cv2.COLOR_BGR2RGB)
+        im = Image.fromarray(image_show)
+        img = ImageTk.PhotoImage(image=im)
+
+        lblInputImage.configure(image=img)
+        lblInputImage.image = img
+
+
+        #### label imagen de entrada
+        # Label IMAGEN DE ENTRADA
+        lblInfo1 = Label(root, text="IMAGEN DE ENTRADA:")
+        lblInfo1.grid(column=0, row=1, padx=5, pady=5)
+        main()
+
+    return
+def salida_img():
+    global cap
+    output_img =cv2.imread('0.png')
+    output_img = imutils.resize(output_img,height=150)
+
+    #### visualizar la imagen de entrada en la GUI
+    image_show = imutils.resize(output_img,width=300)
+    image_show = cv2.cvtColor(image_show,cv2.COLOR_BGR2RGB)
+    im = Image.fromarray(image_show)
+    img = ImageTk.PhotoImage(image=im)
+
+    lblOutputImage.configure(image=img)
+    lblOutputImage.image = img
+
+
+    #### label imagen de salida
+    # Label IMAGEN DE SALIDA
+    lblInfo3 = Label(root, text="IMAGEN DE SALIDA:", font="bold")
+    lblInfo3.grid(column=1, row=0, padx=5, pady=5)
+    return
+##########################################################
 max_x = Variable()
 max_x.value= 0
 max_y = Variable()
@@ -198,4 +258,51 @@ raw_valy.value = yn.value
 raw_valx = Variable()
 raw_valx.value = xn.value
 
-main()
+
+##################### GUI ########################
+
+image = None  ### asignación de variable img
+
+#### creando la ventana principal
+root = Tk()
+
+
+### label donde se presentará la imagen de entrada
+
+lblInputImage = Label(root)
+lblInputImage.grid(column=0, row=2)
+
+######### label donde se presentará la imagen 
+lblOutputImage = Label(root,text='',width=400)
+lblOutputImage.grid(column=1, row=1, rowspan=6)
+
+### se crea botón que servirá para importar las imagenes
+upload_img_bn = Button(
+    root,
+    text='Elegir Imagen',
+    width=25,
+    command=elegir_img  ## asociamos el botón a la función de img
+    )
+
+upload_img_bn.grid(
+    column=0,
+    row=0,
+    padx=0,
+    pady=5
+)
+
+################# configuración socket
+ms = socket.socket()
+ms.bind(('localhost',5000))
+ms.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+ms.listen(5)
+blob_detector_params = cv2.SimpleBlobDetector_Params()
+blob_detector_params.filterByArea = True
+blob_detector_params.maxArea = 150
+blob_detector = cv2.SimpleBlobDetector_create(blob_detector_params)
+lblOutputImage.configure(text='')
+cap = cv2.VideoCapture(0)
+
+root.mainloop()
+
+
