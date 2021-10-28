@@ -1,7 +1,7 @@
 import cv2
 import socket
 import numpy as np
-import pyautogui
+#import pyautogui
 
 
 def show_img(img, name='my image'):
@@ -42,6 +42,7 @@ def detect_faces(img, classifier):
         return None, None
     for (x, y, w, h) in biggest:
         frame = img[y:y + h, x:x + w]
+        #frame =cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
     return frame, (y, x)
 
 def cut_eyebrows(img):
