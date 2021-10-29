@@ -49,7 +49,7 @@ def visualizar():
             for eye in eyes:
                 if eye is not None:
                     eye = cut_eyebrows(eye)
-                    keypoints = blob_process(eye, blob_detector)
+                    keypoints = blob_process(eye, blob_detector,threshold)## threshold
                   
                     eye = cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
@@ -118,7 +118,11 @@ def elegir_img():
 
     return
 def video_de_entrada():
-    global cap
+    global cap,threshold
+    
+    if selected.get() ==2 or selected.get()==1:
+        threshold = int(entrada_1.get())
+        print(threshold)
     if selected.get() == 1: 
         #rad1.configure(state='disabled')
         #rad2.configure(state='disabled')
@@ -148,7 +152,7 @@ def finalizar():
 def gui():
         
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
-    global lblInputImage,lblvideo
+    global lblInputImage,lblvideo,entrada_1,threshold
     
 
     cap = None
@@ -211,7 +215,19 @@ def gui():
         state='disabled',
         command=finalizar
         )
-    boton_end.grid(column=0,row=6,columnspan=2,pady=10)
+    boton_end.grid(column=0,row=7,columnspan=2,pady=10)
+
+
+
+     ##### Ingreso botón que permita ingresar información
+    
+    inputThreshold= Label(root,text='Threshold')
+    inputThreshold.grid(column=0,row=5)
+    entry_var = StringVar()
+    entrada_1 = Entry(root,state=NORMAL,textvariable=entry_var)
+    entrada_1.grid(column=0,row=6)
+
+    ################       ##############
 
     root.mainloop()
 
