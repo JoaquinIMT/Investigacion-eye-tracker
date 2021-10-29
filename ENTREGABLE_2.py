@@ -31,56 +31,6 @@ def deteccion_facial(faces,frame):
         frame = cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),2)
         return frame
 
-def main():
-   
-    #ms = socket.socket()
-   # ms.bind(('localhost',5000))
-    #ms.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-    #ms.listen(5)
-
-    #cap = cv2.VideoCapture(0)
-    # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 250)
-    # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 150)
-    
-    
-    inas=0
-    while True:
-        _, frame = cap.read()
-        face_frame, face_coords = detect_faces(frame, face_cascade)
-        if face_frame is not None:
-            eyes = detect_eyes(face_frame, eye_cascade)
-            eye_coords = []
-            eyes_frames = []
-            for eye in eyes:
-                if eye is not None:
-                    eye = cut_eyebrows(eye)
-                    keypoints = blob_process(eye, blob_detector)
-                  
-                    eye = cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-                    kp_coordinate = (0,0)
-                    kp_size = 0
-                    for kp in keypoints:
-                        if kp.size > kp_size:
-                            kp_size = kp.size
-                            kp_coordinate = kp.pt
-                    if len(keypoints) > 0:
-                        eyes_frames.append(eye)
-                        eye_coords.append(kp_coordinate)
-            inas+=1
-            cv2.imshow('showing_FACE', face_frame) #Cara con los ojos ya marcados
-            cv2.imshow('showing_FACE', frame) #Toda la imagen
-            #if len(eye_coords) > 0:
-            #Descomentar para usar con processing
-            #    send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames,ms)
-        
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    
-    cap.release()
-    cv2.destroyAllWindows()   
-
-
 
 
 def visualizar():
@@ -114,9 +64,12 @@ def visualizar():
                         eye_coords.append(kp_coordinate)
             #inas+=1
             frame = cv2.cvtColor(face_frame,cv2.COLOR_BGR2RGB)
+            if len(eye_coords) > 0:
+            #Descomentar para usar con processing
+               send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames)
         
             #frame = deteccion_facial(face_frame,frame)
-            print(frame)
+            #print(frame) --> Visualización de cada cuadro en consola
             im = Image.fromarray(frame)
             img = ImageTk.PhotoImage(image=im)
             lblvideo.configure(image=img)
@@ -326,26 +279,26 @@ def eye_position(eye, eye_coord,i):
         return raw_valx.value,1-yn.value
     return  xn.value,1-yn.value
 
-def send_data(frame, face, face_coords, eye_coords,eyes,ms):
+def send_data(frame, face, face_coords, eye_coords,eyes):#,ms):
     fc = face_scale(frame, face)
     eyes_coords = []
     for i in range(len(eye_coords)):
         eyes_coords.append(eye_position(eyes[i],eye_coords[i],i))
     #o = input(eyes_coords)
     #eyes_coords[0][0] = xn
-    plt.axis([0,hist_xn1.value+2,0,1])
-    plt.ion()
-    colors = ['bo','ro']
-    plt.plot(hist_xn.value,xn.value,'bo')
+    #plt.axis([0,hist_xn1.value+2,0,1])
+    #plt.ion()
+    #colors = ['bo','ro']
+    #plt.plot(hist_xn.value,xn.value,'bo')
     #plt.plot(hist_xn1.value,xn1.value,'ro')
-    plt.plot(hist_xn2.value,xn2.value,'go')
+    #plt.plot(hist_xn2.value,xn2.value,'go')
     #plt.plot(hist_xn3.value,xn3.value,'mo')
     #plt.plot(hist_xn4.value,xn4.value,'ko')
     # for i in range(len(eyes_coords)):
     #     plt.plot(xn,eyes_coords[i][1],colors[i])
-    plt.draw()
-    plt.show()
-    plt.pause(0.001) 
+    #plt.draw()
+    #plt.show()
+    #plt.pause(0.001) 
     hist_xn.value = hist_xn.value + 1
     hist_xn1.value = hist_xn1.value + 1
     hist_xn2.value = hist_xn2.value + 1
@@ -358,7 +311,10 @@ def send_data(frame, face, face_coords, eye_coords,eyes,ms):
         msj += str(eyes_coords[0])+"#"+str(eyes_coords[1])
     else:
         msj += str(eyes_coords[0])+"#"+str(eyes_coords[0])
+        
     msj = msj.replace("(","").replace(")","").replace(" ","") #Limpiamos la cadena
+    print('message',msj)
+    """
     #msj = msj.replace("[","").replace("]","")
     connection, _ = ms.accept()
     if(connection != None):
@@ -367,6 +323,9 @@ def send_data(frame, face, face_coords, eye_coords,eyes,ms):
         #print(max_x.value,min_X.value,max_y.value,min_y.value)
         print(xn.value,yn.value)
         connection.close()
+
+    """
+
     
 max_x = Variable()
 max_x.value= 0
