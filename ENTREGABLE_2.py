@@ -34,10 +34,10 @@ def deteccion_facial(faces,frame):
 
 
 def visualizar():
-    global cap
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
     ret,frame = cap.read()
     if ret == True:
-        frame= imutils.resize(frame,width=640)
+        #frame= imutils.resize(frame)#,width=640)
         #frame = deteccion_facial(frame)
         #print('deteccion')
        # print(frame)
@@ -64,9 +64,15 @@ def visualizar():
                         eye_coords.append(kp_coordinate)
             #inas+=1
             frame = cv2.cvtColor(face_frame,cv2.COLOR_BGR2RGB)
+
+            cv2.putText(frame,f'x={(ojo1_x):.2f}',(50,60),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'y={(ojo1_y):.2f}',(50,75),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'x={(ojo2_x):.2f}',(200,60),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'y={(ojo2_y):.2f}',(200,75),fontFace=2,fontScale=0.5,color=(0,0,0))
+
             if len(eye_coords) > 0:
             #Descomentar para usar con processing
-               send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames)
+               send_data(frame.shape[:2],face_frame.shape[:2],face_coords,eye_coords,eyes_frames) ### necesito coordenadas de ojo izq y derecho
         
             #frame = deteccion_facial(face_frame,frame)
             #print(frame) --> Visualización de cada cuadro en consola
@@ -82,7 +88,7 @@ def visualizar():
         rad2.configure(state='active')
         selected.set(0) ### esto es para que no este seleccionado ningujo 
             #### de las redondas
-        boton_end.configure(state='disabled')
+        boton_end.configure(state='active')
         cap.release()
 
 def elegir_img():
@@ -153,7 +159,11 @@ def gui():
         
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
     global lblInputImage,lblvideo,entrada_1,threshold
-    
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
+    ojo1_x=0
+    ojo1_y=0
+    ojo2_x=0
+    ojo2_y=0
 
     cap = None
     root = Tk()
@@ -212,7 +222,7 @@ def gui():
     boton_end = Button(
         root,
         text='Finalizar Visualización y limpiar',
-        state='disabled',
+        state='active',
         command=finalizar
         )
     boton_end.grid(column=0,row=7,columnspan=2,pady=10)
@@ -227,7 +237,8 @@ def gui():
     entrada_1 = Entry(root,state=NORMAL,textvariable=entry_var)
     entrada_1.grid(column=0,row=6)
 
-    ################       ##############
+    ################ Visualizando los valores en ojo izquierdo y ojo derecho ##############
+    
 
     root.mainloop()
 
@@ -296,6 +307,7 @@ def eye_position(eye, eye_coord,i):
     return  xn.value,1-yn.value
 
 def send_data(frame, face, face_coords, eye_coords,eyes):#,ms):
+    global ojo1_x,ojo1_y,ojo2_x,ojo2_y
     fc = face_scale(frame, face)
     eyes_coords = []
     for i in range(len(eye_coords)):
@@ -325,8 +337,18 @@ def send_data(frame, face, face_coords, eye_coords,eyes):#,ms):
     msj += str(face_scale(frame,face_coords))+"_"
     if len(eyes_coords) > 1:
         msj += str(eyes_coords[0])+"#"+str(eyes_coords[1])
+        ojo1_x,ojo1_y = eyes_coords[0]  ##### coordenadas en x e y para el ojo 1 
+        ojo2_x,ojo2_y = eyes_coords[1]   ##### coordenadas en x e y para el ojo 2
+
+    ############### fixed 2 digits##############
+
+        print('ojo 1',eyes_coords[0])
+        print('ojo 2',eyes_coords[1])
     else:
         msj += str(eyes_coords[0])+"#"+str(eyes_coords[0])
+        print('ojo 1',eyes_coords[0])
+        ojo1_x,ojo1_y = eyes_coords[0] ##### coordenadas en x e y para el ojo 1 
+       
         
     msj = msj.replace("(","").replace(")","").replace(" ","") #Limpiamos la cadena
     print('message',msj)
