@@ -51,7 +51,7 @@ def cut_eyebrows(img):
     img = img[eyebrow_h:height, 0:width]  # cut eyebrows out (15 px)
     return img
 
-def blob_process(img, detector, threshold=40):
+def blob_process(img, detector, threshold):
     _, img = cv2.threshold(img, threshold, 250, cv2.THRESH_BINARY)
     #cv2.imshow('blured4', img)
     img = cv2.erode(img, None, iterations=4)
