@@ -91,18 +91,14 @@ def visualizar():
             image_imported = imutils.resize(image_imported,width=800)
             image_imported = cv2.cvtColor(image_imported,cv2.COLOR_BGR2RGB)
             #image_imported = cv2.circle(image_imported,(200*ojo1_y,100*ojo1_x),7,(0,0,255),4)
-            image_import = cv2.circle(image_imported,(int(800*ojo1_y),int(400*ojo1_x)),7,(0,0,255),4)
+            image_import = cv2.circle(image_imported,(int(800*ojo1_x),int(400*ojo1_y)),7,(0,0,255),4)
             im = Image.fromarray(image_import)
             img = ImageTk.PhotoImage(image=im)
 
             lblInputImage.configure(image=img)
             lblInputImage.image = img
             print(ojo1_x,ojo1_y)
-            image_import = cv2.circle(image_imported,(int(20*ojo1_y),int(10*ojo1_x)),7,(0,0,255),4)
             cv2.waitKey(0)
-            #image_imported = cv2.circle(image_imported,(400,200),7,(0,0,255),4)
-            im = Image.fromarray(image_import)
-            img = ImageTk.PhotoImage(image=im)
             lblInputImage.configure(image=img)
             lblInputImage.image = img
         lblvideo.after(1,visualizar)
