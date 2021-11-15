@@ -2,6 +2,7 @@ import cv2
 import socket
 import numpy as np
 #import pyautogui
+import mediapipe as mp
 
 
 def show_img(img, name='my image'):
@@ -88,3 +89,21 @@ def eye_position(eye, eye_coord):
     h_R = eye_coord[0]/h
     
     return w_R,h_R
+
+class EyeDetector():
+    def __init__(self):
+        mp_face_mesh = mp.solutions.face_mesh
+        self.face_mesh = mp_face_mesh.FaceMesh(refine_landmarks=True)
+        self.center_ids = [468, 473]
+    
+    def eye_coords(self, image):
+        rgb_image = rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        result = self.face_mesh.process(rgb_image)
+        eyes = []
+        if result.multi_face_landmarks != None:
+            for facial_landmarks in result.multi_face_landmarks:
+                for id in self.center_ids:
+                    landmark = facial_landmarks.landmark[self.center_ids[id]]
+                    eyes.append((landmark.x,landmark.y))
+                    #eyes.append((landmark.x,landmark.y,landmark.z))
+        return eyes[0], eyes[1]
