@@ -8,44 +8,18 @@ from PIL import ImageTk
 
 import imutils
 
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-
-##### parámetros de openCV
-blob_detector_params = cv2.SimpleBlobDetector_Params()
-blob_detector_params.filterByArea = True
-blob_detector_params.maxArea = 150
-blob_detector = cv2.SimpleBlobDetector_create(blob_detector_params)
+eye_detector = EyeDetector()
 
 ################# GUI#########################
 def visualizar():
     global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path
     ret,frame = cap.read()
     if ret == True:
-        face_frame, face_coords = detect_faces(frame, face_cascade)
-        if face_frame is not None:
-            eyes = detect_eyes(face_frame, eye_cascade)
-            eye_coords = []
-            eyes_frames = []
-            for eye in eyes:
-                if eye is not None:
-                    eye = cut_eyebrows(eye)
-                    keypoints = blob_process(eye, blob_detector,threshold)## threshold
-                  
-                    eye = cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        eyes = eye_detector.eye_coords(frame)
+        if eyes is not None:
+            (ojo1_x, ojo1_y), (ojo2_x, ojo2_y) = eyes
 
-                    kp_coordinate = (0,0)
-                    kp_size = 0
-                    for kp in keypoints:
-                        if kp.size > kp_size:
-                            kp_size = kp.size
-                            kp_coordinate = kp.pt
-                    if len(keypoints) > 0:
-                        eyes_frames.append(eye)
-                        eye_coords.append(kp_coordinate)
-            #inas+=1
-            frame = cv2.cvtColor(face_frame,cv2.COLOR_BGR2RGB)
-
+            frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             cv2.putText(frame,f'x={(ojo1_x):.2f}',(50,60),fontFace=2,fontScale=0.5,color=(0,0,0))
             cv2.putText(frame,f'y={(ojo1_y):.2f}',(50,75),fontFace=2,fontScale=0.5,color=(0,0,0))
             cv2.putText(frame,f'x={(ojo2_x):.2f}',(200,60),fontFace=2,fontScale=0.5,color=(0,0,0))

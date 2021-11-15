@@ -97,13 +97,18 @@ class EyeDetector():
         self.center_ids = [468, 473]
     
     def eye_coords(self, image):
-        rgb_image = rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         result = self.face_mesh.process(rgb_image)
         eyes = []
         if result.multi_face_landmarks != None:
             for facial_landmarks in result.multi_face_landmarks:
                 for id in self.center_ids:
-                    landmark = facial_landmarks.landmark[self.center_ids[id]]
+                    landmark = facial_landmarks.landmark[id]
                     eyes.append((landmark.x,landmark.y))
                     #eyes.append((landmark.x,landmark.y,landmark.z))
+        else:
+            return None
         return eyes[0], eyes[1]
+
+    def scale_eyes(self,eyes):
+        pass
