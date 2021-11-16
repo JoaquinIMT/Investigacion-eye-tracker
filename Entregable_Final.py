@@ -7,50 +7,56 @@ from PIL import Image
 from PIL import ImageTk
 
 import imutils
-
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-
-##### parámetros de openCV
-blob_detector_params = cv2.SimpleBlobDetector_Params()
-blob_detector_params.filterByArea = True
-blob_detector_params.maxArea = 150
-blob_detector = cv2.SimpleBlobDetector_create(blob_detector_params)
-
+from kalmanfilter import KalmanFilter
+eye_detector = EyeDetector()
+kf = KalmanFilter()
+global saved
+saved = []
 ################# GUI#########################
 def visualizar():
-    global cap
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path,saved
     ret,frame = cap.read()
     if ret == True:
-        frame= imutils.resize(frame,width=640)
-        face_frame, face_coords = detect_faces(frame, face_cascade)
-        if face_frame is not None:
-            eyes = detect_eyes(face_frame, eye_cascade)
-            eye_coords = []
-            eyes_frames = []
-            for eye in eyes:
-                if eye is not None:
-                    eye = cut_eyebrows(eye)
-                    keypoints = blob_process(eye, blob_detector)
-                  
-                    eye = cv2.drawKeypoints(eye, keypoints, eye, (0, 0, 255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        eyes = eye_detector.eye_coords(frame)
+        if eyes is not None:
+            ( (ojo1_x, ojo1_y), (ojo2_x, ojo2_y) ), ( scaled_eye_x, scaled_eye_y) = eyes
 
-                    kp_coordinate = (0,0)
-                    kp_size = 0
-                    for kp in keypoints:
-                        if kp.size > kp_size:
-                            kp_size = kp.size
-                            kp_coordinate = kp.pt
-                    if len(keypoints) > 0:
-                        eyes_frames.append(eye)
-                        eye_coords.append(kp_coordinate)
-            #inas+=1
-            frame = cv2.cvtColor(face_frame,cv2.COLOR_BGR2RGB)
+            frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+            cv2.putText(frame,f'x={(ojo1_x):.2f}',(50,60),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'y={(ojo1_y):.2f}',(50,75),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'x={(ojo2_x):.2f}',(200,60),fontFace=2,fontScale=0.5,color=(0,0,0))
+            cv2.putText(frame,f'y={(ojo2_y):.2f}',(200,75),fontFace=2,fontScale=0.5,color=(0,0,0))
 
             im = Image.fromarray(frame)
             img = ImageTk.PhotoImage(image=im)
             lblvideo.configure(image=img)
             lblvideo.image=img
+
+            ##### modificación de parametros de imagen importada    
+            #### leer la imagen
+            image_imported =cv2.imread(path)
+            image_imported = imutils.resize(image_imported,height=400)
+
+            #### visualizar la imagen de entrada en la GUI
+            image_imported = imutils.resize(image_imported,width=800)
+            image_imported = cv2.cvtColor(image_imported,cv2.COLOR_BGR2RGB)
+            
+            predicted = kf.predict(800*scaled_eye_x,400*scaled_eye_y)
+            image_import = cv2.circle(image_imported,(int(800*scaled_eye_x),int(400*scaled_eye_y)),7,(0,0,255),4)
+            image_import = cv2.circle(image_imported,(int(predicted[0]),int(predicted[1])),7,(255,0,0),4)
+            saved = []
+            
+            im = Image.fromarray(image_import)
+            img = ImageTk.PhotoImage(image=im)
+
+            lblInputImage.configure(image=img)
+            lblInputImage.image = img
+
+            cv2.waitKey(0)
+            lblInputImage.configure(image=img)
+            lblInputImage.image = img
+
+
         lblvideo.after(1,visualizar)
     else:
         lblvideo.image = ''
@@ -59,10 +65,11 @@ def visualizar():
         rad2.configure(state='active')
         selected.set(0) ### esto es para que no este seleccionado ningujo 
             #### de las redondas
-        boton_end.configure(state='disabled')
+        boton_end.configure(state='active')
         cap.release()
 
 def elegir_img():
+    global path
     path = filedialog.askopenfilename(
         initialdir='/images',
         title='Selecciona una imagen',
@@ -73,15 +80,17 @@ def elegir_img():
         )
     )
     if len(path) >0:
-        
+        global ojo1_x,ojo1_y
         #### leer la imagen
-        image =cv2.imread(path)
-        image = imutils.resize(image,height=400)
+        image_imported =cv2.imread(path)
+        image_imported = imutils.resize(image_imported,height=400)
 
         #### visualizar la imagen de entrada en la GUI
-        image_show = imutils.resize(image,width=800)
-        image_show = cv2.cvtColor(image_show,cv2.COLOR_BGR2RGB)
-        im = Image.fromarray(image_show)
+        image_imported = imutils.resize(image_imported,width=800)
+        image_imported = cv2.cvtColor(image_imported,cv2.COLOR_BGR2RGB)
+
+        image_import = cv2.circle(image_imported,(400,200),7,(0,0,255),4)
+        im = Image.fromarray(image_import)
         img = ImageTk.PhotoImage(image=im)
 
         lblInputImage.configure(image=img)
@@ -89,7 +98,11 @@ def elegir_img():
     return
 
 def video_de_entrada():
-    global cap
+    global cap,threshold
+    
+    if selected.get() ==2:
+        threshold = int(entrada_1.get())
+        print(threshold)
     if selected.get() == 1: 
         boton_end.configure(state='active')
         boton_upload_file.configure(state='active')
@@ -114,9 +127,14 @@ def finalizar():
     selected.set(0)
     cap.release()
 
-def gui():  
+def gui():
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
-    global lblInputImage,lblvideo
+    global lblInputImage,lblvideo,entrada_1,threshold
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
+    ojo1_x=0
+    ojo1_y=0
+    ojo2_x=0
+    ojo2_y=0
     
     cap = None
     root = Tk()
@@ -174,11 +192,19 @@ def gui():
     boton_end = Button(
         root,
         text='Finalizar Visualización y limpiar',
-        state='disabled',
+        state='active',
         command=finalizar
         )
-    boton_end.grid(column=0,row=6,columnspan=2,pady=10)
+    boton_end.grid(column=0,row=7,columnspan=2,pady=10)
 
+     ##### Ingreso botón que permita ingresar información
+    inputThreshold= Label(root,text='Threshold')
+    inputThreshold.grid(column=0,row=5)
+    entry_var = StringVar()
+    entrada_1 = Entry(root,state=NORMAL,textvariable=entry_var)
+    entrada_1.grid(column=0,row=6)
+
+    ################ Visualizando los valores en ojo izquierdo y ojo derecho ##############
     root.mainloop()
 
 gui()
