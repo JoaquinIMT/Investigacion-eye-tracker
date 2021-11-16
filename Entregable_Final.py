@@ -7,31 +7,32 @@ from PIL import Image
 from PIL import ImageTk
 
 import imutils
-
+from kalmanfilter import KalmanFilter
 eye_detector = EyeDetector()
-
+kf = KalmanFilter()
+global saved
+saved = []
 ################# GUI#########################
 def visualizar():
-    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path,saved
     ret,frame = cap.read()
     if ret == True:
         eyes = eye_detector.eye_coords(frame)
         if eyes is not None:
-            (ojo1_x, ojo1_y), (ojo2_x, ojo2_y) = eyes
+            ( (ojo1_x, ojo1_y), (ojo2_x, ojo2_y) ), ( scaled_eye_x, scaled_eye_y) = eyes
 
             frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
             cv2.putText(frame,f'x={(ojo1_x):.2f}',(50,60),fontFace=2,fontScale=0.5,color=(0,0,0))
             cv2.putText(frame,f'y={(ojo1_y):.2f}',(50,75),fontFace=2,fontScale=0.5,color=(0,0,0))
             cv2.putText(frame,f'x={(ojo2_x):.2f}',(200,60),fontFace=2,fontScale=0.5,color=(0,0,0))
             cv2.putText(frame,f'y={(ojo2_y):.2f}',(200,75),fontFace=2,fontScale=0.5,color=(0,0,0))
-            
+
             im = Image.fromarray(frame)
             img = ImageTk.PhotoImage(image=im)
             lblvideo.configure(image=img)
             lblvideo.image=img
 
-            ##### modificación de parametros de imagen importada
-                    
+            ##### modificación de parametros de imagen importada    
             #### leer la imagen
             image_imported =cv2.imread(path)
             image_imported = imutils.resize(image_imported,height=400)
@@ -39,17 +40,22 @@ def visualizar():
             #### visualizar la imagen de entrada en la GUI
             image_imported = imutils.resize(image_imported,width=800)
             image_imported = cv2.cvtColor(image_imported,cv2.COLOR_BGR2RGB)
-
-            image_import = cv2.circle(image_imported,(int(800*ojo1_x),int(400*ojo1_y)),7,(0,0,255),4)
+            
+            predicted = kf.predict(800*scaled_eye_x,400*scaled_eye_y)
+            image_import = cv2.circle(image_imported,(int(800*scaled_eye_x),int(400*scaled_eye_y)),7,(0,0,255),4)
+            image_import = cv2.circle(image_imported,(int(predicted[0]),int(predicted[1])),7,(255,0,0),4)
+            saved = []
+            
             im = Image.fromarray(image_import)
             img = ImageTk.PhotoImage(image=im)
 
             lblInputImage.configure(image=img)
             lblInputImage.image = img
-            print(ojo1_x,ojo1_y)
+
             cv2.waitKey(0)
             lblInputImage.configure(image=img)
             lblInputImage.image = img
+
 
         lblvideo.after(1,visualizar)
     else:
@@ -121,7 +127,7 @@ def finalizar():
     selected.set(0)
     cap.release()
 
-def gui():  
+def gui():
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
     global lblInputImage,lblvideo,entrada_1,threshold
     global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
