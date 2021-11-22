@@ -125,8 +125,22 @@ class EyeDetector():
         eye_y = facial_landmarks.landmark[self.center_ids[0]].y
 
         w, h = end_wide-start_wide, end_height-start_height
-
+        
+        if eye_x<start_wide:
+            eye_x=start_wide
+        elif eye_x>end_wide:
+            eye_x=end_wide
+        if eye_y<start_height:
+            eye_y=start_height
+        elif eye_y>end_height:
+            eye_y=end_height
+            
         x = (eye_x-start_wide)/w
         y = (eye_y-start_height)/h
         
         return x,y
+
+def write_to_file(x,y):
+    f = open("logs.txt","a")
+    f.write(str(x)+","+str(y)+" ")
+    f.close()
