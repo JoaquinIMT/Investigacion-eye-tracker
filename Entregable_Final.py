@@ -70,7 +70,7 @@ def visualizar():
                     image_imported = saved_img.copy()
 
                 predicted = kf.predict(screen_width*scaled_eye_x,screen_height*scaled_eye_y)
-                image_import = cv2.circle(image_imported,(int(screen_width*scaled_eye_x),int(screen_height*scaled_eye_y)),5,(0,0,255),4)
+                image_import = cv2.circle(image_imported,(int(predicted[0]),int(predicted[1])),5,(0,0,255),4)
                 saved = []
                 
                 im = Image.fromarray(image_import)
