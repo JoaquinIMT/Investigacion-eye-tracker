@@ -19,7 +19,7 @@ saved = []
 def visualizar():
     global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path,save,img___,path_img, saved_img,change
     global scaled_eye_x,scaled_eye_y
-    global previous_time,current_time,count
+    global previous_time,current_time,count,init_time
     ret,frame = cap.read()
     if ret == True:
         eyes = eye_detector.eye_coords(frame)
@@ -41,14 +41,14 @@ def visualizar():
             ##### modificación de parametros de imagen importada    
             #### leer la imagen
             
-            
+            current_time=time()
             if count==0:
                 saved_img = None
 
             if count!=0:
-                change=write_to_file(scaled_eye_x,scaled_eye_y,count,change)
+                change=write_to_file(scaled_eye_x,scaled_eye_y,count,change,current_time,init_time)
             
-            current_time=time()
+            
             if (current_time-previous_time>7) and (count<6):
                 
                 path_img = path +img___[count]
@@ -133,7 +133,7 @@ def elegir_img():
 def video_de_entrada(): #Aqui esta el array de fotos
     global cap,threshold,image_imported,path,img___,path_img
     global ojo1_value_x,ojo1_value_y,ojo2_value_x,ojo2_value_y
-    global previous_time,current_time,count
+    global previous_time,current_time,count,init_time
 
     path = os.path.join(os.getcwd(),"img_prototype")
 
@@ -159,9 +159,11 @@ def video_de_entrada(): #Aqui esta el array de fotos
         boton_end.configure(state='active')
         lblInfoVideoPath.configure(text='')
         cap = cv2.VideoCapture(0)
+        init_time = time()
         visualizar()
 
 def finalizar():
+    global init_time,current_time
     print('finalizar')
     lblInfoVideoPath.configure(text='')
     lblvideo.image=''
@@ -177,8 +179,8 @@ def finalizar():
     ojo1_value_y.configure(text='0')
     ojo2_value_x.configure(text='0')
     ojo2_value_y.configure(text='0')
-    write_to_file(screen_width,screen_height,50,change=True)
-    guardar_images()
+    write_to_file(screen_width,screen_height,50,current=current_time,previous=init_time,change=True,)
+    #guardar_images()
 
 def guardar_images():
     f = open("logs.txt",'r')
@@ -191,11 +193,11 @@ def guardar_images():
             if line=="\n":
                 break
             
-            if line[0]!='I':      
+            if line[0]!='I' and line[0]!='T':      
                 dato=line.split(sep='\n')[0].split(sep=',')
                 imagen.append([float(dato[0]),float(dato[1])])
             # print('dato')
-            if i==6 and line[0]!='I':
+            if i==6 and (line[0]!='I' and line[0]!='T'):
                 dato=line.split(sep='\n')[0].split(sep=',')
                 imagen.append([float(dato[0]),float(dato[1])])
                 variable=False
@@ -246,13 +248,12 @@ def guardar_images():
 
         cv2.imwrite(f'{i} '+'view.jpg',image_import)
 
-
 def gui():
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
     global lblInputImage,lblvideo,entrada_1,threshold
     global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
     global screen_width,screen_height ### obtención de tamaño de pantalla
-    global ojo1_value_x,ojo1_value_y,ojo2_value_x,ojo2_value_y,change
+    global ojo1_value_x,ojo1_value_y,ojo2_value_x,ojo2_value_y,change,init_time
     ojo1_x=0
     ojo1_y=0
     ojo2_x=0
@@ -264,7 +265,7 @@ def gui():
 
     IblInfo1 = Label(root,text='Entrada de Video',font='Bold')
     IblInfo1.grid(column=0,row=0,columnspan=1)
-
+    
     selected = IntVar()
     rad1 = Radiobutton( ### para adjuntar imagen
         root,

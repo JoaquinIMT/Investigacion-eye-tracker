@@ -140,12 +140,13 @@ class EyeDetector():
         
         return x,y
 
-def write_to_file(x,y,number,change):
+def write_to_file(x,y,number,change,current,previous):
     f = open("logs.txt","a")
     if number >1 and change:
         f.write("\n")
     if change:
         f.write(f'Imagen numero:{number}\n')
+    f.write(f'Time:{current-previous}\n')
     f.write('{:.2f},{:.2f}\n'.format(x,y))
     f.close()
     return False
