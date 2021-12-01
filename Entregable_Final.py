@@ -17,7 +17,7 @@ global saved
 saved = []
 ################# GUI#########################
 def visualizar():
-    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path,save,img___,path_img, saved_img
+    global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y,path,save,img___,path_img, saved_img,change
     global scaled_eye_x,scaled_eye_y
     global previous_time,current_time,count
     ret,frame = cap.read()
@@ -26,7 +26,7 @@ def visualizar():
         if eyes is not None:
             ( (ojo1_x, ojo1_y), (ojo2_x, ojo2_y) ), ( scaled_eye_x, scaled_eye_y) = eyes
             scaled_eye_x = 1-scaled_eye_x
-            write_to_file(scaled_eye_x,scaled_eye_y)
+            
             frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
 
             #### resize frame 
@@ -40,13 +40,20 @@ def visualizar():
         
             ##### modificación de parametros de imagen importada    
             #### leer la imagen
+            
+            
             if count==0:
                 saved_img = None
+
+            if count!=0:
+                change=write_to_file(scaled_eye_x,scaled_eye_y,count,change)
+            
             current_time=time()
             if (current_time-previous_time>7) and (count<6):
                 
                 path_img = path +img___[count]
                 count +=1
+                change=True
                 saved_img = None
                 previous_time = time()
                 elegir_img()
@@ -170,18 +177,88 @@ def finalizar():
     ojo1_value_y.configure(text='0')
     ojo2_value_x.configure(text='0')
     ojo2_value_y.configure(text='0')
+    write_to_file(screen_width,screen_height,50,change=True)
+    guardar_images()
+
+def guardar_images():
+    f = open("logs.txt",'r')
+    variable= True
+    all_data ={}
+    for i in range(7):
+        imagen=[]
+        while variable:
+            line = f.readline()
+            if line=="\n":
+                break
+            
+            if line[0]!='I':      
+                dato=line.split(sep='\n')[0].split(sep=',')
+                imagen.append([float(dato[0]),float(dato[1])])
+            # print('dato')
+            if i==6 and line[0]!='I':
+                dato=line.split(sep='\n')[0].split(sep=',')
+                imagen.append([float(dato[0]),float(dato[1])])
+                variable=False
+
+        variable=True
+        all_data[i]=imagen
+
+    ### filtro de información
+
+    print(all_data)
+
+    screen_width=all_data[6][0][0]
+    screen_height=all_data[6][0][1]
+    path = os.path.join(os.getcwd(),"img_prototype")
+
+    img___ = [
+        "/001.jpg",
+        "/002.jpg",
+        "/003.jpg",
+        "/004.jpg",
+        "/005.jpg",
+        "/006.jpg"
+    ]
+
+    for i in range(len(img___)):
+        #### leer la imagen
+        print(path+img___[i])
+        image_imported =cv2.imread(path+img___[i])
+        print(image_imported)
+        image_imported = cv2.resize(image_imported,(int(screen_width),int(screen_height)))
+        image_imported = imutils.resize(image_imported,height=int(screen_height)) #"""height=400"""
+
+        #### visualizar la imagen de entrada en la GUI
+        image_imported = imutils.resize(image_imported,width=int(screen_width))#width=800)
+        
+        #image_imported = cv2.cvtColor(image_imported,cv2.COLOR_BGR2RGB)
+        
+        #image_import = cv2.circle(image_imported,((int(screen_width/2)),(int(screen_height/2)-50)),7,(0,0,255),cv2.FILLED) #4
+        image_import = None
+        for j in range(len(all_data[i])):
+            x = all_data[i][j][0]
+            y = all_data[i][j][1]
+            
+            if j==0:
+                image_import = cv2.circle(image_imported,((int(screen_width*x)),(int(screen_height*y))),7,(0,255,0),4)
+            else:
+                image_import = cv2.circle(image_import,((int(screen_width*x)),(int(screen_height*y))),7,(0,255,0),4)
+
+        cv2.imwrite(f'{i} '+'view.jpg',image_import)
+
 
 def gui():
     global cap,selected,IblInfo1,lblInfoVideoPath,rad1,rad2,boton_end,boton_upload_file,boton_upload_file
     global lblInputImage,lblvideo,entrada_1,threshold
     global cap,ojo1_x,ojo1_y,ojo2_x,ojo2_y
     global screen_width,screen_height ### obtención de tamaño de pantalla
-    global ojo1_value_x,ojo1_value_y,ojo2_value_x,ojo2_value_y 
+    global ojo1_value_x,ojo1_value_y,ojo2_value_x,ojo2_value_y,change
     ojo1_x=0
     ojo1_y=0
     ojo2_x=0
     ojo2_y=0
     
+    change=True ### el valor de cambio inicial para imagenes
     cap = None
     root = Tk()
 
